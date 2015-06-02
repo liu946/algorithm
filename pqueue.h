@@ -11,6 +11,7 @@
 
 #include "string"
 #include "iostream"
+#include "mystl.h"
 
 using namespace std;
 #define PQUEUELENGTH 20
@@ -22,8 +23,10 @@ class Pqueue {
     unsigned int maxnum=0;
 public:
     Pqueue(unsigned int max=PQUEUELENGTH){
+        i=0;
         maxnum=max;
         dataarr=new T[max];
+        next=NULL;
     }
     ~Pqueue(){
         delete dataarr;
@@ -34,7 +37,7 @@ public:
     unsigned int getindex(){return i;}
     void insert(T data){
         // 满检查，如果满，建立新的堆来插入元素
-        if (i>=maxnum) {
+        if ((this->i)>=maxnum) {
             if (next==NULL) {
                 next=new Pqueue<T>(maxnum);
             }
@@ -42,12 +45,12 @@ public:
             return;
         }
         //使用新的i替换this->i 防止对i更改;
-        int i=this->i;
-        dataarr[i]=data;
-        while (i>0 && dataarr[i/2]<dataarr[i]) {
+        int ii=this->i;
+        dataarr[ii]=data;
+        while (ii>0 && dataarr[ii/2]<dataarr[ii]) {
             // 交换父子对象位置
-            T tmp=dataarr[i/2];dataarr[i/2]=dataarr[i];dataarr[i]=tmp;
-            i/=2;
+            T tmp=dataarr[ii/2];dataarr[ii/2]=dataarr[ii];dataarr[ii]=tmp;
+            ii/=2;
         }
         this->i++;
     }

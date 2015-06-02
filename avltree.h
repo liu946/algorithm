@@ -11,11 +11,13 @@
  ***********/
 
 #include <iostream>
+using namespace std;
 
 template<typename Comparable>
 class AvlTree {
 public:
-    AvlTree() {
+
+    AvlTree(){
         root = NULL;
     } // Constructor
     
@@ -143,7 +145,6 @@ bool AvlTree<Comparable>::contains(const Comparable & x, AvlNode *t) const {
     else
         return true; // Match
 }
-
 /**
  * Internal method to insert into a subtree.
  * x is the item to insert.

@@ -18,6 +18,7 @@
 #define __simplestl__mystl__
 #include <fstream>
 #include <iostream>
+#include "pqueue.h"
 using namespace::std;
 template <typename T>
 class Node {
@@ -688,11 +689,8 @@ public:
                 pnode=(ClueTreeNode<T> *)node;
             }
         };
-        if (PROORDER==ORDER) {
-            this->traversal(foo);
-        }else if(POSTORDER==ORDER){
-            this->traversalpost(foo);
-        }
+        this->template traversal<ORDER>(foo);
+
     }
     void travelwithclue(){
         ClueTreeNode<T>* pnode=cluehead;
@@ -749,7 +747,7 @@ public:
     List(const List & l){
         //拷贝构造函数
         //析构当前量
-        Node<T>* ptr,*ptr2;
+        Node<T>* ptr,*ptr2 = nullptr;
         while (head!=NULL) {
             ptr=head;
             head=head->next;
@@ -778,7 +776,7 @@ public:
         }
     }
     List & operator=(List & l){
-        Node<T>* ptr,*ptr2;
+        Node<T>* ptr,*ptr2 = nullptr;
         while (head!=NULL) {
             ptr=head;
             head=head->next;
@@ -873,12 +871,10 @@ public:
         }
     }
     //求长
-    int length(){
-        return this->deep();
-    }
+    int length(){return this->deep();}
     //寻找
     int find(T data){
-        int len=length();
+        int len=this->deep();
         Node<T> * ptr=this->head;
         for (int i=0; i<len; i++) {
             if (ptr->data==data) {
@@ -1080,8 +1076,8 @@ public:
 };
 
 //带数据段的行，用于邻接表表的一行
-template <typename T>
-class GraphRow:public Factor<int> {
+template <typename T,typename etype=int>
+class GraphRow:public Factor<etype> {
     
 public:
     T rowname;
@@ -1092,15 +1088,27 @@ public:
         rowname=x;
         this->head=NULL;
     }
+    void append(etype x){
+        Node<etype> *p=this->head;
+        if(p==NULL){
+            this->head=new Node<etype>(x) ;
+            return;
+        }
+        while (p->next!=NULL) {
+            p=p->next;
+        }
+        p->next=new Node<etype>(x);
+        
+    }
 };
 //定义表数据结构，增加一些方法
-template <typename T>
-class GraphRowsFactor:public Factor<GraphRow<T>> {
+template <typename T,typename etype=int,typename Tnode=GraphRow<T,etype>>
+class GraphRowsFactor:public Factor<Tnode> {
 public:
     //找节点
     int find(T data){
-        int len=this->length();
-        Node<GraphRow<T>> * ptr=this->head;
+        int len=this->deep();
+        Node<Tnode> * ptr=this->head;
         for (int i=0; i<len; i++) {
             if (ptr->data==data) {
                 return i;
@@ -1111,24 +1119,24 @@ public:
     }
     //连接新节点
     void append(T newnodedata){
-        Node<GraphRow<T>> *p=this->head;
+        Node<Tnode> *p=this->head;
         if(p==NULL){
-            this->head=new Node<GraphRow<T>>(newnodedata) ;
+            this->head=new Node<Tnode>(newnodedata) ;
             return;
         }
         while (p->next!=NULL) {
             p=p->next;
         }
-        p->next=new Node<GraphRow<T>>(newnodedata);
+        p->next=new Node<Tnode>(newnodedata);
         
     }
     
 };
 //含有邻接表的有向图
-template <typename T>
+template <typename T,typename etype=int ,typename Tnode=GraphRow<T,etype>>
 class DircGraph {
 protected:
-    GraphRowsFactor<T> rows;
+    GraphRowsFactor<T,etype,Tnode> rows;
     
 private:
     //遍历节点
@@ -1153,23 +1161,24 @@ private:
     }
     
 public:
-    GraphRow<T> & operator[](int i){
+    GraphRow<T,etype> & operator[](int i){
         return rows[i];
     }
     int length(){
-        return rows.length();
+        return rows.deep();
     }
     //加边或点
     void addarrow(T a,T b){
+        
         int index1=rows.find(a);
         if (index1==-1) {
-            index1=rows.length();
+            index1=rows.deep();
             rows.append(a);
             
         }
         int index2=rows.find(b);
         if (index2==-1) {
-            index2=rows.length();
+            index2=rows.deep();
             rows.append(b);
             
         }
@@ -1180,12 +1189,13 @@ public:
     }
     //判断边存在
     bool directto(T a,T b){
-        int index1=rows.find(a);
+        int  index1=rows.find(a);
         int index2=rows.find(b);
         if (index1==-1||index2==-1) {
             string err("no such node");
             throw err;
         }
+        
         return  rows[index1].find(index2)!=-1;
     }
     //判断边存在
@@ -1199,11 +1209,11 @@ public:
     }
     //递归遍历
     void traversal(function<void (T)>show=[=](T t){cout<<" "<<t;} ){
-        bool * visited=new bool[rows.length()];
-        for (int i=0; i<rows.length(); i++) {
+        bool * visited=new bool[rows.deep()];
+        for (int i=0; i<rows.deep(); i++) {
             visited[i]=false;
         }
-        for (int i=0; i<rows.length(); i++) {
+        for (int i=0; i<rows.deep(); i++) {
             if (!visited[i]) {
                 traversalnode(show,i,visited);
             }
@@ -1212,11 +1222,11 @@ public:
     }
     //遍历行
     void traversalrows(function<void (GraphRow<T>&)>excutenode ){
-        bool * visited=new bool[rows.length()];
-        for (int i=0; i<rows.length(); i++) {
+        bool * visited=new bool[rows.deep()];
+        for (int i=0; i<rows.deep(); i++) {
             visited[i]=false;
         }
-        for (int i=0; i<rows.length(); i++) {
+        for (int i=0; i<rows.deep(); i++) {
             if (!visited[i]) {
                 traversalnoderows(excutenode,i,visited);
             }
@@ -1226,13 +1236,13 @@ public:
     //非递归遍历
     void traversalnorecursion(function<void (T)>show=[=](T t){cout<<" "<<t;} ){
         
-        bool * visited=new bool[rows.length()];
-        for (int i=0; i<rows.length(); i++) {
+        bool * visited=new bool[rows.deep()];
+        for (int i=0; i<rows.deep(); i++) {
             visited[i]=false;
         }
         Stack<int> stk;
         
-        for (int i=0; i<rows.length(); i++) {
+        for (int i=0; i<rows.deep(); i++) {
             if (!visited[i]) {
                 stk.push(i);
                 while (!stk.empty()) {
@@ -1251,13 +1261,13 @@ public:
     //层序便利
     void traversallevel(function<void (T)>show=[=](T t){cout<<" "<<t;} ){
         
-        bool * visited=new bool[rows.length()];
-        for (int i=0; i<rows.length(); i++) {
+        bool * visited=new bool[rows.deep()];
+        for (int i=0; i<rows.deep(); i++) {
             visited[i]=false;
         }
         Queue<int> que;
         
-        for (int i=0; i<rows.length(); i++) {
+        for (int i=0; i<rows.deep(); i++) {
             if (!visited[i]) {
                 que.enqueue(i);
                 while (!que.empty()) {
@@ -1276,7 +1286,7 @@ public:
     //输出邻接表
     void traversallist()
     {
-        for (int i=0; i<rows.length(); i++) {
+        for (int i=0; i<rows.deep(); i++) {
             cout<<endl<<rows[i].rowname<<" : ";
             for (int j=0; j<rows[i].length(); j++) {
                 cout<<rows[rows[i][j]].rowname<<" ";
@@ -1305,6 +1315,49 @@ public:
     int find(T x){
         return rows.find(x);
     }
+    bool canreach(T a ,T b){
+        bool * visited=new bool[rows.deep()];
+        for (int i=0; i<rows.deep(); i++) {
+            visited[i]=false;
+        }
+        Stack<int> stk;
+        
+        int i = this->rows.find(a);
+        if (i==-1) {
+            return 0;
+        }
+        stk.push(i);
+        while (!stk.empty()) {
+            int index=stk.pop();
+            if (visited[index]) continue;
+            if(rows[index].rowname==b){
+                delete [] visited;
+                return 1;
+            }
+            visited[index]=true;
+            for (int j=0; j<rows[index].deep(); j++) {
+                stk.push(rows[index][j]);
+            }
+        }
+        return 0;
+    }
+    bool connected(){
+        int len = this->rows.deep();
+        
+        for (int i=1; i<len; i++) {
+            if (!this->canreach((*this)[0].rowname,(*this)[i].rowname)) {
+                return false;
+            }
+        }
+        for (int i=1; i<len; i++) {
+            if (!this->canreach((*this)[i].rowname,(*this)[0].rowname)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
 };
 //无向图
 template <typename T>
@@ -1317,6 +1370,323 @@ public:
         this->addarrow(b,a);
     }
 };
+
+class weightedge {
+public:
+    int next=0;
+    int weight=0;
+    weightedge(){};
+    weightedge(int _n,int _w){next=_n;weight=_w;}
+    
+    weightedge(const weightedge & a){
+        next=a.next;weight=a.weight;
+    }
+    void operator=(const int  &  a){
+        next=a;
+    }
+    operator int(){
+        return next;
+    }
+    bool operator<(weightedge & b){
+        return weight>b.weight;
+    }
+    bool operator<=(weightedge & b){
+        return weight>=b.weight;
+    }
+    bool operator>(weightedge & b){
+        return weight<b.weight;
+    }
+    bool operator>=(weightedge & b){
+        return weight<=b.weight;
+    }
+};
+class edge:public weightedge{
+public:
+    int self=0;
+    edge(){};
+    edge(int _s,int _n,int _w):weightedge(_n,_w){self=_s;}
+    edge(int _s, weightedge & _w):weightedge(_w){self=_s;}
+    //注意拷贝构造函数原型，必须用const
+    edge(const edge & e):weightedge(e.next,e.weight){
+        self=e.self;
+    }
+    void operator=(edge e){
+        self=e.self;this->weight=e.weight;this->next=e.next;
+    }
+    
+};
+template <class T,class etype=weightedge,class Tnode = GraphRow<T,weightedge>>
+class DircWeightGraph:public DircGraph<T,etype,Tnode> {
+    
+public:
+    void addarrow(T a,T b,int w){
+        
+        int index1=this->rows.find(a);
+        if (index1==-1) {
+            index1=this->rows.deep();
+            this->rows.append(a);
+            
+        }
+        int index2=this->rows.find(b);
+        if (index2==-1) {
+            index2=this->rows.deep();
+            this->rows.append(b);
+            
+        }
+        if (index1==index2||this->directto(a, b)) {
+            return;
+        }
+        auto &n=(this->rows);
+        auto &m=n[index1];
+        etype x(index2,w);
+        m.append(x);
+    }
+    int directweight(T a , T b){
+        int  index1=this->rows.find(a);
+        int index2=this->rows.find(b);
+        if (index1==-1||index2==-1) {
+            string err("no such node");
+            throw err;
+        }
+        etype e(index2,0);
+        auto i3=this->rows[index1].find(e);
+        if (i3==-1) {
+            return -1;
+        }
+        return this->rows[index1][i3].weight;
+    }
+    bool directto(T a,T b){
+        int  index1=this->rows.find(a);
+        int index2=this->rows.find(b);
+        if (index1==-1||index2==-1) {
+            string err("no such node");
+            throw err;
+        }
+        etype e(index2,0);
+        return  this->rows[index1].find(e)!=-1;
+    }
+    // 模板特化方法，自定义类型需要重载
+    virtual void print(){
+        int len = this->length();cout<<endl<<'\t';
+        for (int i=0; i<len; i++)cout<<(*this)[i].rowname<<'\t';
+        cout<<endl;
+        for (int i=0; i<len; i++)
+        {
+            cout<<(*this)[i].rowname<<'\t';
+            for (int j=0; j<len; j++) {
+                cout<< this->directweight((*this)[i].rowname, (*this)[j].rowname)<<'\t';
+            }
+            cout<<endl;
+        }
+    }
+    bool Kruskal(DircWeightGraph<T,etype,Tnode> & mintree ){
+        if (!this->connected()|| this->rows.deep()<=1 ) {
+            return false;
+        }
+        Pqueue<edge> pq(100);
+        int lenr=this->rows.deep();
+        // 建立一个边优先队列
+        for (int i=0; i<lenr; i++) {
+            int lenc=this->rows[i].deep();
+            for (int j=0; j<lenc; j++) {
+                edge a(i,this->rows[i][j].next,this->rows[i][j].weight);
+                pq.insert(a);
+            }
+        }
+        // 初始化一个bool的访问数组
+        bool * visit=new bool[lenr];for (int i=0; i<lenr; i++)visit[i]=0;
+        
+        while (!pq.empty()) {
+            // 取出一条边 a
+            edge a(pq.extractmax());
+            if (visit[a.next] && visit[a.self]) {
+                continue;
+            }
+            mintree.addarrow(this->rows[a.self].rowname,this->rows[a.next].rowname,a.weight);
+            visit[a.next] = visit[a.self]= true;
+            bool ret=true;
+            for (int i=0; i<lenr; i++)ret=ret && visit[i];
+            if (ret&&mintree.connected()) {
+                break;
+            }
+        }
+        delete [] visit;
+        return true;
+        
+    }
+    bool Prim(DircWeightGraph<T,etype,Tnode> & mintree ){
+        if (!this->connected()|| this->rows.deep()<=1 ) {
+            return false;
+        }
+        Pqueue<edge> pq(100);
+        int len=this->rows.deep();
+        bool * visit=new bool[len];for (int i=0; i<len; i++)visit[i]=0;
+        int len1  = this->rows[0].deep();
+        visit[0]=1;
+        for (int i=0; i<len1; i++) {
+            weightedge w=this->rows[0][i];
+            edge a(0,w);
+            pq.insert(a);
+        }
+        while (!pq.empty()) {
+            edge a(pq.extractmax());
+            if (visit[a.next]) {
+                continue;
+            }
+            mintree.addarrow(this->rows[a.self].rowname,this->rows[a.next].rowname,a.weight);
+            visit[a.next]=true;
+            for (int i=0; i<this->rows[a.next].deep(); i++) {
+                if (!visit[this->rows[a.next][i]]) {
+                    edge _t(a.next,this->rows[a.next][i],this->rows[a.next][i].weight);
+                    pq.insert(_t);
+                }
+            }
+            bool ret=true;
+            for (int i=0; i<len; i++)ret=ret && visit[i];
+            if (ret) {
+                delete [] visit;
+                return true;
+            }
+        }
+        delete [] visit;
+        return true;
+    }
+    
+};
+template <class T,class etype=weightedge,class Tnode = GraphRow<T,weightedge>>
+class WeightGraph: public DircWeightGraph<T,etype,Tnode> {
+    
+    
+public:
+    void addline(T a,T b,int w){
+        this->addarrow (a, b, w);
+        this->addarrow (b, a, w);
+    }
+    bool Prim(WeightGraph<T,etype,Tnode> & mintree ){
+        if (!this->connected()|| this->rows.deep()<=1 ) {
+            return false;
+        }
+        Pqueue<edge> pq(100);
+        int len=this->rows.deep();
+        bool * visit=new bool[len];for (int i=0; i<len; i++)visit[i]=0;
+        int len1  = this->rows[0].deep();
+        visit[0]=1;
+        for (int i=0; i<len1; i++) {
+            weightedge w=this->rows[0][i];
+            edge a(0,w);
+            pq.insert(a);
+        }
+        while (!pq.empty()) {
+            edge a(pq.extractmax());
+            if (visit[a.next]) {
+                continue;
+            }
+            mintree.addline(this->rows[a.self].rowname,this->rows[a.next].rowname,a.weight);
+            visit[a.next]=true;
+            for (int i=0; i<this->rows[a.next].deep(); i++) {
+                if (!visit[this->rows[a.next][i]]) {
+                    edge _t(a.next,this->rows[a.next][i],this->rows[a.next][i].weight);
+                    pq.insert(_t);
+                }
+            }
+            bool ret=true;
+            for (int i=0; i<len; i++)ret=ret && visit[i];
+            if (ret) {
+                delete [] visit;
+                return true;
+            }
+        }
+        delete [] visit;
+        return true;
+    }
+    bool Kruskal(WeightGraph<T,etype,Tnode> & mintree ){
+        if (!this->connected()|| this->rows.deep()<=1 ) {
+            return false;
+        }
+        Pqueue<edge> pq(100);
+        int lenr=this->rows.deep();
+        for (int i=0; i<lenr; i++) {
+            int lenc=this->rows[i].deep();
+            for (int j=0; j<lenc; j++) {
+                edge a(i,this->rows[i][j].next,this->rows[i][j].weight);
+                pq.insert(a);
+            }
+        }
+        bool * visit=new bool[lenr];for (int i=0; i<lenr; i++)visit[i]=0;
+        while (!pq.empty()) {
+            edge a(pq.extractmax());
+            // 两个都找到过而且两个可以相连。则进行下一次循环。
+            if (visit[a.next] && visit[a.self] && mintree.canreach(this->rows[a.self].rowname,this->rows[a.next].rowname))
+            {
+                continue;
+            }
+            mintree.addline(this->rows[a.self].rowname,this->rows[a.next].rowname,a.weight);
+            visit[a.next] = visit[a.self]= true;
+            bool ret=true;
+            for (int i=0; i<lenr; i++)ret=ret && visit[i];
+            if (ret && mintree.connected()) {
+                break;
+            }
+        }
+        delete [] visit;
+        return true;
+        
+    }
+    int Dijkstra(T c,T c2){
+        int index = this->rows.find(c);
+        int index2 = this->rows.find(c2);
+        if (index==-1 || index2==-1)return -1;
+        int len = this->rows.deep();
+        int *dis=new int[len];
+        for (int i=0; i<len; i++)dis[i]=(i==index?0:-1);
+        Queue<int> q;
+        q.enqueue(index);
+        while (!q.empty()) {
+            int ii=q.dequeue();
+            int l=this->rows[ii].deep();
+            for (int i=0;i<l; i++) {
+                int w=this->rows[ii][i].weight;
+                int n=this->rows[ii][i].next;
+                if (dis[n]==-1 ||dis[n]>(w+dis[ii])) {
+                    dis[n]=(w+dis[ii]);
+                    q.enqueue(n);
+                }
+            }
+        }
+        int d=dis[index2];
+        delete [] dis;
+        return d;
+    }
+    int Floyd(T c,T c2){
+        int index = this->rows.find(c);
+        int index2 = this->rows.find(c2);
+        if (index==-1 || index2==-1)return -1;
+        int len = this->rows.deep();
+        int *dis=new int[len*len];
+        for (int i=0; i<len; i++)
+            for (int j=0; j<len; j++)
+                dis[i*len+j]= this->directweight((*this)[i].rowname, (*this)[j].rowname);
+        for (int k=0; k<len; k++) {
+            for (int i=0; i<len; i++) {
+                for (int j=0; j<len; j++) {
+                    int i1=dis[i*len +j];
+                    int i2=dis[i*len +k];
+                    int i3=dis[k*len +j];
+                    // 替换条件，i2,i3不是无穷远->(i1无穷远？换:(i1>(i2+i3)?换:不换))
+                    if ((i2!=-1 && i3!=-1) && (i1==-1 || ( i1>i2+i3))) {
+                        dis[i*len+j] = dis[i*len+k] + dis[k*len+j] ;
+                    }
+                }
+            }
+        }
+        int d=dis[index*len+index2];
+        delete[] dis;
+
+        return d;
+    }
+    
+};
+
 #endif /* defined(__simplestl__mystl__) */
 
 //examples
@@ -1339,3 +1709,27 @@ public:
 //fst.printforest();
 //Tree<char> trfst(fst);
 //trfst.showtreewithtable();
+
+
+//WeightGraph<char>g;
+//Graph<char>dg;
+//g.addarrow('a', 'b',3);
+//for (int i=0; i<20; i++) {
+//    g.addline('a'+rand()%10, 'a'+rand()%10,i);
+//}
+//g.print();
+//// 连通性
+//cout<<g.connected();
+//
+////prim 算法
+//WeightGraph<char> png;
+//g.Prim(png);
+//png.print();
+////Kruskal 算法
+//WeightGraph<char> kng;
+//g.Kruskal(kng);
+//kng.print();
+////Dijkstra 算法
+//cout<<kng.Dijkstra('e', 'f');
+////Floyd 算法
+//cout<<kng.Floyd('e', 'f');

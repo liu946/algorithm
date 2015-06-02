@@ -42,7 +42,17 @@ class RBTree {
     }
     void insert(const Comparable & x, RBNode * & t, RBNode * p);
     void remove(const Comparable & x, RBNode * t);
-    
+    bool contains(const Comparable & x,RBNode * t){
+        if (t==NULL) {
+            return false;
+        }else if(x<t->element){
+            return contains(x, t->left);
+        }else if (x>t->element){
+            return contains(x,t->right);
+        }else{
+            return true;
+        }
+    }
     RBNode * findprenode(RBNode *);
     void rotateWithLeftChild(RBNode *  k2); //记录父节点不用引用改变值
     void rotateWithRightChild(RBNode *  k2);
@@ -163,7 +173,7 @@ public:
         remove(x,root);
     }
     bool contains(const Comparable & x){
-        contains(x,root);
+        return contains(x,root);
     }
     void printTree(std::ostream & out = std::cout) const {
         if (isempty())
@@ -241,7 +251,7 @@ void RBTree<Comparable>::delcase2left(RBNode *  t) {
     t->color=RED;
     t->right->color=BLACK;
     rotateWithRightChild(t);
-    delcase1left(t);
+    maintainleft(t);
 }
 template <class Comparable>
 void RBTree<Comparable>::delcase3left(RBNode *  t) {
@@ -296,7 +306,7 @@ void RBTree<Comparable>::delcase2right(RBNode *  t) {
     t->color=RED;
     t->left->color=BLACK;
     rotateWithLeftChild(t);
-    delcase1right(t);
+    maintainright(t);
 }
 template <class Comparable>
 void RBTree<Comparable>::delcase3right(RBNode *  t) {
@@ -442,62 +452,23 @@ void RBTree<Comparable>::remove(const Comparable & x,RBTree<Comparable>::RBNode 
         }
     }
 }
-//template <class Comparable>
-//void RBTree<Comparable>::deleteadjust(RBTree<Comparable>::RBNode * target) {
-//    while(target!=root&&target->color==BLACK){
-//        RBNode* parent=target->parent;
-//        if(target==parent->left){
-//            RBNode* uncle=parent->right;
-//            if(uncle!=NULL&&uncle->color==RED){
-//                uncle->color=BLACK;                                 //case1
-//                parent->color=RED;
-//                rotateWithRightChild(parent);
-//                uncle=uncle->left;
-//            }
-//            if(uncle!=NULL&&uncle->left->color==BLACK&&uncle->right->color==BLACK){
-//                uncle->color=RED;                            //case2
-//                target=target->parent;
-//            }else{
-//                if (uncle!=NULL&&uncle->left->color==RED){
-//                    uncle->left->color=BLACK;
-//                    uncle->color=RED;
-//                    rotateWithLeftChild(uncle);                  //case3
-//                    uncle=target->parent->right;
-//                }
-//                uncle->color=target->parent->color;        //case4
-//                parent->color=BLACK;
-//                uncle->right->color=BLACK;
-//                rotateWithRightChild(parent);
-//                target=root;
-//            }
-//        }else{
-//            RBNode* uncle=parent->left;
-//            if(uncle!=NULL&&uncle->color==RED){
-//                uncle->color=BLACK;
-//                parent->color=RED;
-//                rotateWithLeftChild(parent);
-//                uncle=uncle->right;
-//            }
-//            if(uncle!=NULL&&uncle->right->color==BLACK&&uncle->left->color==BLACK){
-//                uncle->color=RED;
-//                target=target->parent;
-//            }
-//            else{
-//                if(uncle!=NULL&&uncle->right->color==RED){
-//                    uncle->right->color=BLACK;
-//                    uncle->color=RED;
-//                    rotateWithRightChild(uncle);
-//                    uncle=target->parent->left;
-//                }
-//                uncle->color=target->parent->color;
-//                parent->color=BLACK;
-//                uncle->left->color=BLACK;
-//                rotateWithLeftChild(parent);
-//                target=root;
-//            }
-//        }
-//        
+// example:
+
+//int main() {
+//    RBTree<int> t1;
+//    
+//    for (int i = 0; i < 60; i++) {
+//        t1.insert(rand()%60);
 //    }
-//    root->color=BLACK;
+//    
+//    for (int i = 0; i < 400; i++) {
+//        int a=rand()%60;
+//        if (t1.contains(a)) {
+//            t1.remove(a);
+//            t1.printTree();cout<<endl;
+//        }
+//    }
+//    return 0;
 //}
+
 #endif

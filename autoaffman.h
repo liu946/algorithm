@@ -105,7 +105,6 @@ public:
     void savefile_c(const char * file){
         FILE * fp;
         fp=fopen(file, "wb");
-        char f;
         for(;binstr.length();){
             fprintf(fp, "%c",popbyte());
         }
